@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>WebGIS - Peta Rawan Banjir Surabaya</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="css/leaflet.css">
+  <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+  <link rel="stylesheet" href="css/qgis2web.css">
+  <link rel="stylesheet" href="css/fontawesome-all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+  <style>
+    html, body, #map {
+      margin: 0; padding: 0;
+      height: 100%;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    #splash {
+      position: fixed;
+      z-index: 2000;
+      width: 100%; height: 100%;
+      background: linear-gradient(to right, #0052D4, #4364F7, #6FB1FC);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #splash h1 { font-size: 42px; margin-bottom: 24px; }
+    #splash p { font-size: 20px; margin-bottom: 24px; max-width: 600px; }
+    #splash .source { font-size: 16px; margin-bottom: 30px; }
+    #splash button {
+      background: #fff; color: #0052D4;
+      border: none; padding: 14px 28px;
+      font-size: 18px; border-radius: 8px;
+      cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    #judul {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 999;
+      background: #111;
+      color: white;
+      padding: 10px 24px;
+      font-size: 18px;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    }
+
+    #music-player {
+      position: absolute;
+      top: 20px;
+      right: 280px; /* digeser lebih kiri dari sebelumnya */
+      z-index: 998;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    }
+
+    #music-player iframe {
+      width: 320px;
+      height: 180px;
+    }
+
+    #legend {
+      position: absolute;
+      bottom: 170px;
+      left: 20px;
+      background: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 998;
+    }
+
+    #legend::before {
+      content: "Kelas Kerawanan Banjir";
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+    .color-box {
+      width: 20px; height: 20px;
+      border: 1px solid #888;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+    .safe { background: #3498db; }
+    .moderate { background: #2ecc71; }
+    .risk { background: #f1c40f; }
+    .danger { background: #e74c3c; }
+
+    #button-container {
+      position: absolute;
+      bottom: 30px;
+      left: 20px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .custom-btn {
+      background: #007bff;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      text-align: left;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .custom-btn:hover { background: #0056b3; }
+
+    #info {
+      position: absolute;
+      right: 20px;
+      bottom: 30px;
+      max-width: 350px;
+      background: white;
+      color: black;
+      padding: 16px;
+      font-size: 14px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 999;
+    }
+
+    #info h3 { margin-top: 0; font-size: 16px; color: #007bff; }
+    #info h4 { margin-bottom: 5px; font-size: 14px; color: #dc3545; }
+    #info ul { padding-left: 20px; margin-top: 0; }
+  </style>
+</head>
+
+<body>
+<div id="splash">
+  <h1>🌧️ WebGIS Kerawanan Banjir</h1>
+  <p>Peta interaktif ini menyajikan informasi potensi rawan banjir di Kota Surabaya berdasarkan berbagai parameter geospasial.</p>
+  <div class="source">Data diperoleh dari: <b>Kelompok 1 Capstone Design Tematik - Mahasiswa Teknik Geomatika ITS Angkatan 2022</b></div>
+  <button onclick="startApp()">Lihat Peta</button>
+</div>
+
+<div id="map"></div>
+<div id="judul">🌧️ Peta Potensi Rawan Banjir – Kota Surabaya</div>
+
+<div id="music-player">
+  <iframe src="https://www.youtube.com/embed/b5wjvTA4ao4?autoplay=1&loop=1&playlist=b5wjvTA4ao4&controls=1" title="FORTWNTY - Mangu" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+</div>
+
+<div id="legend">
+  <div class="legend-item"><div class="color-box safe"></div> Aman</div>
+  <div class="legend-item"><div class="color-box moderate"></div> Agak Rawan</div>
+  <div class="legend-item"><div class="color-box risk"></div> Rawan</div>
+  <div class="legend-item"><div class="color-box danger"></div> Sangat Rawan</div>
+</div>
+
+<div id="button-container">
+  <a class="custom-btn" href="data/AreaPotensiRawanBanjirKotaSurabaya_1.png" download>📥 PNG - Peta Kerawanan</a>
+  <button class="custom-btn" onclick="downloadGeoJSON()">🌐 GeoJSON - Batas Administrasi</button>
+  <a class="custom-btn" href="data/Area%20Potensi%20Rawan%20Banjir%20Kota%20Surabaya.tif" download>🗺️ TIFF - Data Raster Banjir</a>
+</div>
+
+<div id="info">
+  <h3>ℹ️ Informasi Peta</h3>
+  <p>Peta ini berdasarkan analisis spasial dari data ketinggian, kemiringan lereng, penggunaan lahan, jenis tanah, dan kedekatan terhadap air/drainase. Dikelompokkan menjadi <b>aman</b>, <b>agak rawan</b>, <b>rawan</b>, dan <b>sangat rawan</b>.</p>
+  <h3>💡 Tips Mitigasi Banjir</h3>
+  <h4>Sebelum Banjir</h4>
+  <ul><li>Ikuti peringatan BMKG/BPBD</li><li>Siapkan tas darurat</li><li>Bersihkan saluran air</li></ul>
+  <h4>Saat Banjir</h4>
+  <ul><li>Evakuasi ke tempat tinggi</li><li>Matikan listrik & gas</li><li>Gunakan pelampung</li></ul>
+  <h4>Setelah Banjir</h4>
+  <ul><li>Bersihkan rumah & lingkungan</li><li>Gunakan APD</li><li>Waspadai kabel dan air kotor</li></ul>
+</div>
+
+<!-- JS Libraries -->
+<script src="js/leaflet.js"></script>
+<script src="js/leaflet-hash.js"></script>
+<script src="js/qgis2web_expressions.js"></script>
+<script src="js/L.Control.Layers.Tree.min.js"></script>
+<script src="data/BatasAdministrasiKotaSurabaya_2.js"></script>
+
+<script>
+  function startApp() {
+    document.getElementById("splash").style.display = "none";
+  }
+
+  var map = L.map('map').setView([-7.265, 112.75], 12);
+  new L.Hash(map);
+
+  var baseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  var baseSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+  var baseTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
+  var baseDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+
+  var baseMaps = {
+    "OpenStreetMap": baseOSM,
+    "Satelit": baseSat,
+    "Topografi": baseTopo,
+    "Dark Mode": baseDark
+  };
+
+  var floodMap = L.imageOverlay(
+    'data/AreaPotensiRawanBanjirKotaSurabaya_1.png',
+    [[-7.3517, 112.5913], [-7.1914, 112.8472]],
+    { opacity: 0.7 }
+  ).addTo(map);
+
+  function pop_BatasAdministrasi(feature, layer) {
+    var props = feature.properties;
+    layer.bindPopup(`<b>Kecamatan:</b> ${props.WADMKC || '-'}<br><b>Kelurahan:</b> ${props.NAMOBJ || '-'}<br><b>Luas:</b> ${props.Shape_Area || '-'} m²`);
+  }
+
+  var batasAdmLayer = new L.geoJson(json_BatasAdministrasiKotaSurabaya_2, {
+    onEachFeature: pop_BatasAdministrasi,
+    style: { color: "#000", weight: 1, fillOpacity: 0 }
+  }).addTo(map);
+
+  var overlays = {
+    "Peta Kerawanan (Raster)": floodMap,
+    "Batas Administrasi Surabaya": batasAdmLayer
+  };
+
+  L.control.layers(baseMaps, overlays, { collapsed: false }).addTo(map);
+
+  function downloadGeoJSON() {
+    var geojsonData = batasAdmLayer.toGeoJSON();
+    var blob = new Blob([JSON.stringify(geojsonData)], { type: "application/vnd.geo+json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "BatasAdministrasiKotaSurabaya.geojson";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
